@@ -24,6 +24,9 @@ class Streamer:
         if not self.cap.isOpened():
             raise ValueError(f"Failed to open movie: {self.movie_path}")
 
+        fps = float(self.cap.get(cv2.CAP_PROP_FPS) or 0.0)
+        self.fps = fps if fps > 0 else None  # some files report 0
+
         self.ctx = zmq.Context.instance()
         self.sock = self.ctx.socket(zmq.PUSH)
         self.sock.bind(self.zmq_addr)
@@ -51,9 +54,10 @@ class Streamer:
                 header = {
                     "frame_id": self.frame_id,
                     "ts_ns": time.time_ns(),
-                    "shape": list(frame.shape),   # [h, w, c]
-                    "dtype": str(frame.dtype),    # "uint8"
+                    "shape": list(frame.shape),  # [h, w, c]
+                    "dtype": str(frame.dtype),  # "uint8"
                     "encoding": "raw_bgr",
+                    "fps": self.fps,
                 }
 
                 self.sock.send_multipart(
@@ -69,7 +73,11 @@ class Streamer:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--movie", required=True, help="Movie file path")
-    ap.add_argument("--addr", required=True, help="ZMQ bind address, e.g. ipc:///tmp/ab.sock or tcp://*:5555")
+    ap.add_argument(
+        "--addr",
+        required=True,
+        help="ZMQ bind address, e.g. ipc:///tmp/ab.sock or tcp://*:5555",
+    )
     args = ap.parse_args()
 
     Streamer(args.movie, args.addr).run()

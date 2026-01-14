@@ -31,7 +31,7 @@ class Detector:
             header_bytes, frame_bytes = self.pull.recv_multipart()
 
             header = json.loads(header_bytes.decode("utf-8"))
-            shape = header["shape"]          # [h, w, c]
+            shape = header["shape"]  # [h, w, c]
             dtype = np.dtype(header["dtype"])
 
             frame = np.frombuffer(frame_bytes, dtype=dtype).reshape(shape)
@@ -55,9 +55,7 @@ class Detector:
                 cnts = imutils.grab_contours(cnts)
 
                 # serialize contours as lists
-                contours_payload = [
-                    cnt.reshape(-1, 2).tolist() for cnt in cnts
-                ]
+                contours_payload = [cnt.reshape(-1, 2).tolist() for cnt in cnts]
 
                 self.prev_frame = gray_frame
 
@@ -66,22 +64,30 @@ class Detector:
             out_header = {
                 "frame_id": header["frame_id"],
                 "ts_ns": header["ts_ns"],
+                "fps": header.get("fps"),
                 "shape": shape,
                 "dtype": str(dtype),
                 "encoding": "raw_bgr",
             }
 
-            self.push.send_multipart([
-                json.dumps(out_header).encode("utf-8"),
-                memoryview(frame),
-                json.dumps(contours_payload).encode("utf-8"),
-            ], copy=False)
+            self.push.send_multipart(
+                [
+                    json.dumps(out_header).encode("utf-8"),
+                    memoryview(frame),
+                    json.dumps(contours_payload).encode("utf-8"),
+                ],
+                copy=False,
+            )
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--in", dest="in_addr", required=True, help="ZMQ input address (A -> B)")
-    ap.add_argument("--out", dest="out_addr", required=True, help="ZMQ output address (B -> C)")
+    ap.add_argument(
+        "--in", dest="in_addr", required=True, help="ZMQ input address (A -> B)"
+    )
+    ap.add_argument(
+        "--out", dest="out_addr", required=True, help="ZMQ output address (B -> C)"
+    )
     args = ap.parse_args()
 
     Detector(args.in_addr, args.out_addr).run()
