@@ -48,11 +48,11 @@ class Streamer:
                     frame = frame.astype(np.uint8, copy=False)
                 if not frame.flags["C_CONTIGUOUS"]:
                     frame = np.ascontiguousarray(frame)
-                    
+
                 ts_ms = float(self.cap.get(cv2.CAP_PROP_POS_MSEC))
                 if not ts_ms or ts_ms < 0:
                     ts_ms = 0.0
-                    
+
                 header = {
                     "frame_id": self.frame_id,
                     "ts_ms": ts_ms,
@@ -60,15 +60,20 @@ class Streamer:
                     "dtype": str(frame.dtype),  # "uint8"
                     "encoding": "raw_bgr",
                 }
-                
-                print("streamer push frame_id=", self.frame_id, " ts_ms=", ts_ms)
-                
+
                 self.sock.send_multipart(
                     [json.dumps(header).encode("utf-8"), memoryview(frame)],
                     copy=False,
                 )
 
                 self.frame_id += 1
+
+            # EOS marker
+            self.sock.send_multipart(
+                [json.dumps({"eos": True}).encode("utf-8"), b""],
+                copy=False,
+            )
+
         finally:
             self.close()
 

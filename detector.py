@@ -30,7 +30,15 @@ class Detector:
         while True:
             header_bytes, frame_bytes = self.pull.recv_multipart()
             header = json.loads(header_bytes.decode("utf-8"))
-            print("detector pull frame_id=", header["frame_id"])
+
+            if header.get("eos"):
+                # forward EOS to displayer, then exit
+                self.push.send_multipart(
+                    [json.dumps({"eos": True}).encode("utf-8"), b"", b""],
+                    copy=False,
+                )
+                break
+
             shape = header["shape"]  # [h, w, c]
             dtype = np.dtype(header["dtype"])
 
