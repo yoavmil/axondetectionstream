@@ -1,0 +1,45 @@
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Streamer",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/streamer.py",
+      "args": [
+        "--movie", "${workspaceFolder}/Task Details/People - 6387.mp4",
+        "--addr", "tcp://*:5555"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Detector",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/detector.py",
+      "args": [
+        "--in", "tcp://127.0.0.1:5555",
+        "--out", "tcp://*:5556"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Displayer",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/displayer.py",
+      "args": [
+        "--in", "tcp://127.0.0.1:5556",
+        "--fps", "25"
+      ],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Pipeline A→B→C",
+      "configurations": ["Displayer", "Detector", "Streamer"]
+    }
+  ]
+}
