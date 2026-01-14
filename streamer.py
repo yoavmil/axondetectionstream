@@ -7,6 +7,7 @@
 # Frame payload is raw BGR uint8 (OpenCV default).
 
 import argparse
+from email import header
 import json
 import time
 
@@ -23,9 +24,6 @@ class Streamer:
         self.cap = cv2.VideoCapture(self.movie_path)
         if not self.cap.isOpened():
             raise ValueError(f"Failed to open movie: {self.movie_path}")
-
-        fps = float(self.cap.get(cv2.CAP_PROP_FPS) or 0.0)
-        self.fps = fps if fps > 0 else None  # some files report 0
 
         self.ctx = zmq.Context.instance()
         self.sock = self.ctx.socket(zmq.PUSH)
@@ -50,16 +48,21 @@ class Streamer:
                     frame = frame.astype(np.uint8, copy=False)
                 if not frame.flags["C_CONTIGUOUS"]:
                     frame = np.ascontiguousarray(frame)
-
+                    
+                ts_ms = float(self.cap.get(cv2.CAP_PROP_POS_MSEC))
+                if not ts_ms or ts_ms < 0:
+                    ts_ms = 0.0
+                    
                 header = {
                     "frame_id": self.frame_id,
-                    "ts_ns": time.time_ns(),
+                    "ts_ms": ts_ms,
                     "shape": list(frame.shape),  # [h, w, c]
                     "dtype": str(frame.dtype),  # "uint8"
                     "encoding": "raw_bgr",
-                    "fps": self.fps,
                 }
-
+                
+                print("streamer push frame_id=", self.frame_id, " ts_ms=", ts_ms)
+                
                 self.sock.send_multipart(
                     [json.dumps(header).encode("utf-8"), memoryview(frame)],
                     copy=False,

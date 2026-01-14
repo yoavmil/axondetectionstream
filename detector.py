@@ -29,8 +29,8 @@ class Detector:
     def run(self) -> None:
         while True:
             header_bytes, frame_bytes = self.pull.recv_multipart()
-
             header = json.loads(header_bytes.decode("utf-8"))
+            print("detector pull frame_id=", header["frame_id"])
             shape = header["shape"]  # [h, w, c]
             dtype = np.dtype(header["dtype"])
 
@@ -63,8 +63,7 @@ class Detector:
 
             out_header = {
                 "frame_id": header["frame_id"],
-                "ts_ns": header["ts_ns"],
-                "fps": header.get("fps"),
+                "ts_ms": header["ts_ms"],
                 "shape": shape,
                 "dtype": str(dtype),
                 "encoding": "raw_bgr",
@@ -78,6 +77,7 @@ class Detector:
                 ],
                 copy=False,
             )
+            print("detector push frame_id=", header["frame_id"])
 
 
 def main() -> int:
