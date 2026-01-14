@@ -28,13 +28,13 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/displayer.py",
-      "args": ["--in", "tcp://127.0.0.1:5556"],
+      "args": ["--in", "tcp://127.0.0.1:5556", "--blur"],
       "console": "integratedTerminal"
     }
   ],
   "compounds": [
     {
-      "name": "Pipeline A→B→C",
+      "name": "Pipeline",
       "configurations": ["Displayer", "Detector", "Streamer"]
     }
   ]
